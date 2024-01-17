@@ -1,0 +1,2 @@
+Servirá para decirle que rutas están protegidas para usuarios autenticados.
+Guardará funciones para autetificación
