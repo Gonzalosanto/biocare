@@ -1,9 +1,9 @@
 module.exports = {
-    //HOSPITAL QUERYS
+    //HOSPITAL QUERY'S
     loginHospital: "SELECT * FROM HOSPITAL WHERE Nombre = @Nombre;",
     hospital: "SELECT Nombre FROM HOSPITAL WHERE Id = @Id;",
 
-    //USUARIO QUERYS
+    //USUARIO QUERY'S
     listaUsuarios: "SELECT * FROM USUARIO;",
     usuario: "SELECT * FROM USUARIO WHERE Id = @Id;",
     loginUsuario: "SELECT * FROM USUARIO WHERE Nombre = @Nombre AND Clave = @Clave;",
@@ -12,7 +12,7 @@ module.exports = {
     "UPDATE USUARIO SET Nombre = @Nombre, Usuario = @Usuario, Clave = @Clave WHERE Id= @Id;",
     eliminarUsuario: "DELETE FROM USUARIO WHERE Id = @Id;",
 
-    //EQUIPOS MEDICOS QUERYS
+    //EQUIPOS MEDICOS QUERY'S
     listaDispositivo: "SELECT * FROM DISPOSITIVO_MEDICO;",
     Dispositivo: "SELECT * FROM DISPOSITIVO_MEDICO WHERE Id = @Id;",
     registroDispositivo: "INSERT INTO DISPOSITIVO_MEDICO (IdHospital, Nombre, Area, Estado, Imagen) VALUES (@IdHospital, @Nombre, @Area, @Estado, @Imagen);",
@@ -20,7 +20,7 @@ module.exports = {
     "UPDATE DISPOSITIVO_MEDICO SET Nombre = @Nombre, Area = @Area, Estado = @Estado, Imagen = @Imagen WHERE Id= @Id;",
     eliminarDispositivo: "DELETE FROM DISPOSITIVO_MEDICO WHERE Id = @Id;",
 
-    //REPORTES QUERYS
+    //REPORTES QUERIES
     listaReporte: "SELECT * FROM REPORTE;",
     Reporte: "SELECT * FROM REPORTE WHERE Id = @Id;",
     registroReporte: "INSERT INTO REPORTE (IdDispositivo, Prioridad, Descripcion, Estado) VALUES (@IdDispositivo, @Prioridad, @Descripcion, @Estado);",

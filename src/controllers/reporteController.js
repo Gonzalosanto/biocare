@@ -1,85 +1,118 @@
-const conexion = require('../database/conexion');
-const query = require('../database/query')
-
-async function lista(req, res) {
+const { Reportes } = require('../models/reportes');
+const {generateReportPDF} = require("../libs/export");
+const {Usuario} = require("../models/usuarios");
+const {Equipos} = require("../models/dispositivos");
+const {Area} = require("../models/area");
+const {Prioridad} = require("../models/prioridad");
+const {TipoReporte} = require("../models/tipoReportes");
+async function getReportes(req, res) {
     try {
-        let pool = await sql.connect(config);
-        let dispositivos = await pool.request().query(query.listaReporte);
-        res.send(dispositivos.recordsets);
+        const reports = await Reportes.findAll();
+        res.json(reports);
     }
     catch (error) {
+        res.status(500)
+    }
+}
+
+async function getReporte(req, res) {
+    try {
+        const {id} = req.params;
+        const report = await Reportes.findByPk(id)
+        if(report) return res.json(report)
+        else return res.status(404).json({message: 'Not found'})
+    }
+    catch (error) {
+        res.status(500).json({err: error})
         console.log(error);
     }
 }
 
-async function reporte(req, res) {
+async function createReporte(req, res) {
     try {
-        const {id} = req.paranst;
-        const db = await conexion.getConexion();
-        let  select = await db.request()
-        .input('Id', conexion.sql.Int, id)
-        .query(query.Reporte);
-        if (select.recordset.length > 0) {
-            res.send('el reporte');
-        }else{
-            res.send('no hay reporte');
-        }     
-    }
-    catch (error) {
-        console.log(error);
-    }
-}
-
-async function crear(req, res) {
-    try {
-        var {idDispositivo, prioridad, descripcion} = req.body;
-        const db = await conexion.getConexion();
-        await db.request()
-        .input('IdDispositivo', conexion.sql.Int, idDispositivo)
-        .input('Prioridad', conexion.sql.VarChar, prioridad)
-        .input('Descripcion', conexion.sql.VarChar, descripcion)
-        .query(query.registroReporte);
-        return res.send('Reporte Creado');
+        const {idEquipo, idUsuario, idTipoReporte, prioridad, descripcion} = req.body;
+        if(Object.entries(req.body).length === 0) return res.status(400).json({message: "Error, check your body"})
+        const idPrioridad = (await Prioridad.findOne({where: {'valor': prioridad}})).id
+        const newReportBody = {
+            descripcion: descripcion,
+            fecha: new Date(),
+            PrioridadId: idPrioridad,
+            TipoReporteId: idTipoReporte,
+            UsuarioId: idUsuario,
+            EquipoId: idEquipo
+        }
+        await Reportes.create(newReportBody);
+        return res.json({message: 'Reporte Creado'})
     }
     catch (err) {
+        res.status(500).json({err: err})
         console.log(err);
     }
 }
 
-async function actualizar(req, res) {
+async function updateReporte(req, res) {
     try {
-        var {id}= req.paranst;
-        var {prioridad, descripcion} = req.body;
-        const db = await conexion.getConexion();
-        await db.request()
-        .input('Id', conexion.sql.Int, id)
-        .input('Prioridad', conexion.sql.VarChar, prioridad)
-        .input('Descripcion', conexion.sql.VarChar, descripcion)
-        .query(query.actualizarReporte);
-        return res.send('Dispositivo Actulizado');
+        const {id}= req.params;
+        const { descripcion, idPrioridad, idTipoReporte, idUsuario, idEquipo } = req.body;
+        if(Object.entries(req.body).length === 0) return res.status(400).json({message: "Bad request"})
+        const updatedBody = {
+            descripcion: descripcion,
+            fecha: new Date(),
+            PrioridadId: idPrioridad,
+            TipoReporteId: idTipoReporte,
+            UsuarioId: idUsuario,
+            EquipoId: idEquipo
+        }
+        const updated = await Reportes.update(updatedBody, {where: {id: id}})
+        if(updated[0] === 0) return res.json({message: "Reporte no actualizado"})
+        else return res.json({msg: 'Reporte Actualizado'});
     }
     catch (err) {
-        console.log(err);
+        res.json({err: err})
     }
 }
 
-async function eliminar(req, res) {
+async function deleteReporte(req, res) {
     try {
-        const {id} = req.paranst;
-        const db = await conexion.getConexion();
-        await db.request().input('Id', conexion.sql.Int, id)
-        .query(query.eliminarReporte);
-        res.send('Reporte Borrado');    
+        const {id} = req.params;
+        const reportFound = await Reportes.findByPk(id);
+        if(reportFound) {
+            await Reportes.destroy({where: {id: id}})
+            return res.json({message: 'Reporte Borrado'})
+        } else {
+            return res.status(404).json({error: 'Not found'})
+        }
     }
     catch (error) {
-        console.log(error);
+        res.status(400).json({error: error})
     }
+}
+
+async function sendFileReporte(req,res){
+    const {id} = req.params;
+    const reportFound = await Reportes.findByPk(id);
+    const userFound = await Usuario.findByPk(await reportFound.dataValues.UsuarioId)
+    const equipoFound = await Equipos.findByPk(await reportFound.dataValues.EquipoId)
+    const areaFound = await Area.findOne({where : {id: equipoFound.dataValues.AreaId}})
+    const reportData = {
+        tipo: (await reportFound.getTipoReporte()).tipo,
+        content: {
+            equipo: equipoFound.dataValues.nombre || "El equipo no tiene nombre",
+            area: (areaFound.dataValues.area) || "El equipo no tiene area",
+            prioridad : (await reportFound.getPrioridad()).valor,
+            usuario: (userFound.dataValues.nombre || "Sin nombre"),
+        },
+        description: {
+            detalles: reportFound.dataValues.descripcion,
+            observaciones: ''
+        }
+    }
+    const data = reportData
+    const file = Buffer.from(await generateReportPDF(data));
+    res.contentType("application/pdf");
+    res.status(200).send(file)
 }
 
 module.exports = {
-    lista,
-    reporte,
-    crear,
-    actualizar,
-    eliminar
+    getReportes, getReporte, sendFileReporte, createReporte, updateReporte, deleteReporte
 }

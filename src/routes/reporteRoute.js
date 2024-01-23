@@ -1,12 +1,13 @@
-const controler = require('../controlers/reporteController')
+const controller = require('../controllers/reporteController')
 const express = require('express');
 const route = express.Router();
 
-route
-    .get('/lista', controler.lista)
-    .get('/reporte', controler.reporte)
-    .post('/crear', controler.crear)
-    .put('/actualizar', controler.actualizar)
-    .delete('/eliminar', controler.eliminar)
+const reporteRoutes = route
+    .get('/', controller.getReportes)
+    .get('/pdf/:id', controller.sendFileReporte)
+    .get('/:id', controller.getReporte)
+    .post('/', controller.createReporte)
+    .put('/:id', controller.updateReporte)
+    .delete('/:id', controller.deleteReporte)
 
-module.exports = route;
+module.exports = {reporteRoutes};

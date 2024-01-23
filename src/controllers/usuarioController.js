@@ -1,108 +1,106 @@
-const auth = require('../controllers/authController')
-const conexion = require('../database/conexion');
-const query = require('../database/query')
+const { Usuario } = require('../models/usuarios');
+const {encryptPassword, authPassword} = require("./authController");
 
-async function lista(req, res) {
-    try {
-        let  pool = await  sql.connect(config);
-        let  usuarios = await  pool.request().query(query.listaUsuarios);
-        res.send(usuarios.recordsets);
-    }
-    catch (error) {
-        console.log(error);
-    }
+async function getUsuarios(req, res){
+    const response = await Usuario.findAll();
+    res.send(response);
 }
 
-async function usuario(req, res) {
+async function createUsuario(req, res){
     try {
-        const {id} = req.paranst;
-        const db = await conexion.getConexion();
-        let  select = await db.request()
-        .input('Id', conexion.sql.Int, id)
-        .query(query.usuario);
-        if (select.recordset.length > 0) {
-            res.send('el usuario');
-        }else{
-            res.send('no hay usuario');
-        }     
-    }
-    catch (error) {
-        console.log(error);
-    }
-}
-
-async function login(req, res) {
-    try {
-      const {clave,usuario} = req.body;
-      const nombre = nombre.toLowerCase(); // toda la cadena la hace en minusculas
-      const db = await conexion.getConexion();
-      let  login = await db.request()
-      .input('Usuario', conexion.sql.VarChar, usuario)
-      .query(query.loginUsuario);
-      const {Clave}= login.recordset[0];
-      if (login.recordset.length > 0) {
-        const validacion = await auth.authPassword(Clave,clave);
-        if(validacion){
-          const token = auth.creatToken(login.recordset[0]);    
-          res.json({token});
+        const { correo, password , nombre, apellidoPaterno, apellidoMaterno, rol } = req.body;
+        const newUser = {
+            correo: correo,
+            password: await encryptPassword(password),
+            nombre: nombre,
+            apellido: `${apellidoPaterno} ${apellidoMaterno}`,
+            rol: rol
         }
-        else
-          res.json({ text: "Clave Incorrecta" });
-      }
-      else
-        res.send('Usuario No Encontrado')  
+        await Usuario.create(newUser);
+        res.json({message: "Usuario creado exitosamente"})
+    } catch (e) {
+        res.status(500).json({error: e, message: "Datos invalidos"})
     }
-    catch (err) {
-      console.log(err);
-    }
-  }
-  
-  async function registro(req, res) {
-    try {
-      var {idHospital, nombre, usuario, clave} = req.body;
-      nombre = nombre.toLowerCase();  // toda la cadena la hace en minusculas
-      const contra =  await auth.encriptacion(clave) // encriptamos la clave
-      const db = await conexion.getConexion();
-      await db.request()
-      .input('IdHospital', conexion.sql.Int, idHospital)
-      .input('Nombre', conexion.sql.VarChar, nombre)
-      .input('Usuario', conexion.sql.VarChar, usuario)
-      .input('Clave', conexion.sql.VarChar,contra)
-      .query(query.registroUsuario);
-      return res.send('Usuario Registrado');
-    }
-    catch (err) {
-      console.log(err);
-    }
-  }
+}
 
-async function actualizar() {
+async function getUsuario(req, res) {
     try {
-        var {id} = req.paranst;
-        var {nombre, usuario, clave} = req.body;
-        nombre = nombre.toLowerCase();  // toda la cadena la hace en minusculas
-        const contra =  await auth.encriptacion(clave) // encriptamos la clave
-        const db = await conexion.getConexion();
-        await db.request()
-        .input('Id', conexion.sql.Int, id)
-        .input('Nombre', conexion.sql.VarChar, nombre)
-        .input('Usuario', conexion.sql.VarChar, usuario)
-        .input('Clave', conexion.sql.VarChar,contra)
-        .query(query.actualizarUsuario);
-        return res.send('Actualizar Usuario');
+        const { id } = req.params;
+        const result = await Usuario.findByPk(id);
+        if (result) {
+            res.send(result);
+        }else {
+            res.send('Usuario no encontrado');
+        }
+    }
+    catch (error) {
+        console.log(error);
+    }
+}
+
+async function updateUsuario(req, res) {
+    try {
+        const {id} = req.params;
+        const {nombre, usuario, apellido } = req.body;
+        const update = await Usuario.update({nombre: nombre, correo: usuario, apellido: apellido}, {where: {id: id}})
+        if(update[0] > 0){
+            res.json({message: "Usuario actualizado"})
+        } else {
+            res.json({message: "Usuario no actualizado"})
+        }
     }
     catch (err) {
         console.log(err);
     }
 }
 
-async function eliminar(req, res) {
+async function updateUsuarioPassword(req, res){
     try {
-        const {id} = req.paranst;
-        const db = await conexion.getConexion();
-        await db.request().input('Id', conexion.sql.Int, id)
-        .query(query.eliminarUsuario);
-        res.send('Usuario Eliminado');    
+        const { oldPassword, newPassword, confirmedNewPassword, usuario } = req.body;
+        const userFound = await Usuario.findOne({where: {'correo': usuario }})
+        if(!userFound) res.status(401).json({error: "Usuario invalido"})
+        else {
+            if(await authPassword(oldPassword, userFound.password) && newPassword === confirmedNewPassword){
+                const newPwdBody = {
+                    password: await encryptPassword(newPassword), ...userFound
+                }
+                await Usuario.update(newPwdBody, {where: {id: userFound.id}});
+                res.json({message: "Clave actualizada correctamente"})
+            } else {
+                res.status(400).json({ error: "Los datos ingresados no son validos"})
+            }
+        }
+    } catch (e) {
+        res.status(500).json({error: e})
+    }
+}
+
+async function login(req, res) {
+    try {
+        const { password, correo } = req.body;
+        const result = (await Usuario.findAll({where: {'correo': correo}}))
+            if (result.length === 1) {
+                const validation = await authPassword(password, result[0].dataValues.password);
+                console.log(validation)
+                if(validation){
+                    res.json({message : "Usuario autenticado", usuario: result[0].dataValues});
+                }
+                else
+                  res.json({ message: "Credenciales incorrectas" });
+            } else {
+              res.json({ message: "Usuario no encontrado"})
+        }
+    } catch (err) {
+      res.status(500).json({ error : err})
+    }
+}
+
+async function deleteUsuario(req, res) {
+    try {
+        const { id } = req.params;
+        const dlt = await Usuario.destroy({where: {id: id}})
+        if(dlt) res.json({message: "Usuario eliminado!"});
+        else res.status(400).json({error: "Usuario invalido"})
     }
     catch (error) {
         console.log(error);
@@ -110,10 +108,11 @@ async function eliminar(req, res) {
 }
 
 module.exports = {
-    lista,
-    usuario,
+    getUsuarios,
+    createUsuario,
+    getUsuario,
     login,
-    registro,
-    actualizar,
-    eliminar
+    updateUsuario,
+    updateUsuarioPassword,
+    deleteUsuario
 }

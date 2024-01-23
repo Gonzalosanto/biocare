@@ -1,12 +1,13 @@
-const controller = require('../controllers/dispositivoController');
+const controller = require('../controllers/dispositivoController.js');
 const express = require('express');
 const router = express.Router();
 
-router
-    .get('/lista', controller.lista)
-    .get('/dispositivo', controller.dispositivo)
-    .post('/crear', controller.crear)
-    .put('/actualizar', controller.actualizar)
-    .delete('/eliminar', controller.eliminar);
+const dispositivosRoutes = router
+    .get('/', controller.getDispositivos)
+    .get('/:id', controller.getDispositivo)
+    .post('/', controller.createDispositivo)
+    .put('/:id', controller.updateDispositivo)
+    .delete('/:id', controller.deleteDispositivo);
 
-module.exports = router;
+
+module.exports = { dispositivosRoutes };

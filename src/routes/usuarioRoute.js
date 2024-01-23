@@ -1,14 +1,14 @@
-const controlerUsuario = require('../controlers/usuarioController')
+const controllerUsuario= require('../controllers/usuarioController')
 const express = require('express');
-const route = express.Router();
+const userRoutes = express.Router();
 
-route
-    .get('/lista', controlerUsuario.lista)
-    .get('/usuario/:id', controlerUsuario.usuario)
-    .get('/login', controlerUsuario.login)
-    .get('/registro', controlerUsuario.registro)
-    .put('/actualizar', controlerUsuario.actualizar)
-    .delete('/eliminar', controlerUsuario.eliminar);
+userRoutes
+    .get('/', controllerUsuario.getUsuarios)
+    .get('/:id', controllerUsuario.getUsuario)
+    .post('/login', controllerUsuario.login)
+    .post('/registro', controllerUsuario.createUsuario)
+    .put('/recuperar', controllerUsuario.updateUsuarioPassword)
+    .put('/:id', controllerUsuario.updateUsuario)
+    .delete('/:id', controllerUsuario.deleteUsuario);
 
-module.exports = route;
-    
+module.exports = {userRoutes};

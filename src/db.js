@@ -1,10 +1,10 @@
 const mysql = require('mysql');
-// Convertido de código de callbars a promesas
+// Convertido de código de callbacks a promesas
 const { promisify } = require('util');
 
 const { database } = require('./keys');
 
-// Configuración: conexión más cercana a un entorno de prodicción
+// Configuración: conexión más cercana a un entorno de producción
 // Validación de errores.
 const pool = mysql.createPool(database);
 pool.getConnection((err, connection) => {
@@ -19,7 +19,7 @@ pool.getConnection((err, connection) => {
         }   
 
     if (connection) connection.release();
-    console.log('La fucking Database ha sido conectada ');
+    console.log('La base de datos esta conectada...');
     return;
 });
 
