@@ -102,7 +102,7 @@ async function sendFileReporte(req,res){
             equipo: equipoFound.dataValues.nombre || "El equipo no tiene nombre",
             area: (areaFound.dataValues.area) || "El equipo no tiene area",
             prioridad : (await reportFound.getPrioridad()).valor,
-            usuario: (`${capitalizeWord(userFound.dataValues.nombre)} ${capitalizeWord(userFound.dataValues.apellido)}` || "Sin nombre"),//TODO: Capital letter
+            usuario: (`${capitalizeWord(userFound.dataValues.nombre)} ${capitalizeWord(userFound.dataValues.apellido)}` || "Sin nombre"),
         },
         description: {
             detalles: reportFound.dataValues.descripcion,
