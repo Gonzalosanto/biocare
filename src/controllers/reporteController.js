@@ -4,7 +4,6 @@ const {Usuario} = require("../models/usuarios");
 const {Equipos} = require("../models/dispositivos");
 const {Area} = require("../models/area");
 const {Prioridad} = require("../models/prioridad");
-const {TipoReporte} = require("../models/tipoReportes");
 async function getReportes(req, res) {
     try {
         const reports = await Reportes.findAll();
@@ -109,8 +108,7 @@ async function sendFileReporte(req,res){
             observaciones: ''
         }
     }
-    const data = reportData
-    const file = Buffer.from(await generateReportPDF(data));
+    const file = Buffer.from(await generateReportPDF(reportData));
     res.contentType("application/pdf");
     res.status(200).send(file)
 }

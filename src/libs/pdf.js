@@ -95,7 +95,7 @@ async function createPdf(data) {
             font: helveticaBold,
             color: documentColor
         })
-        if(type == 'FALLO'){
+        if(type === 'FALLO'){
             page.drawText("MANTENIMIENTO", {
                 x:xInitialPosition,
                 y: yInitialPosition - 10,
