@@ -89,18 +89,20 @@ async function deleteReporte(req, res) {
 }
 
 async function sendFileReporte(req,res){
+    const capitalizeWord = (string) => {return string.charAt(0).toUpperCase() + string.slice(1)}
     const {id} = req.params;
     const reportFound = await Reportes.findByPk(id);
     const userFound = await Usuario.findByPk(await reportFound.dataValues.UsuarioId)
     const equipoFound = await Equipos.findByPk(await reportFound.dataValues.EquipoId)
     const areaFound = await Area.findOne({where : {id: equipoFound.dataValues.AreaId}})
+    console.log(capitalizeWord(userFound.dataValues.nombre))
     const reportData = {
         tipo: (await reportFound.getTipoReporte()).tipo,
         content: {
             equipo: equipoFound.dataValues.nombre || "El equipo no tiene nombre",
             area: (areaFound.dataValues.area) || "El equipo no tiene area",
             prioridad : (await reportFound.getPrioridad()).valor,
-            usuario: (userFound.dataValues.nombre || "Sin nombre"),
+            usuario: (`${capitalizeWord(userFound.dataValues.nombre)} ${capitalizeWord(userFound.dataValues.apellido)}` || "Sin nombre"),//TODO: Capital letter
         },
         description: {
             detalles: reportFound.dataValues.descripcion,

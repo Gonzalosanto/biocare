@@ -4,7 +4,9 @@ const Path = require('path')
 
 async function createPdf(data) {
     const pdfDoc = await PDFDocument.create()
+    //FUENTE
     const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
+    //COLOR DE TEXTO y DOCUMENTO
     const documentColor = rgb(0,0.6,0.6)
 
     const page = pdfDoc.addPage()
@@ -48,7 +50,20 @@ async function createPdf(data) {
                     break;
             }
 
-            page.drawText(value.toString().toLocaleLowerCase(), {
+            function prioridadColor(p){
+                page.drawText(value.toString().toLocaleLowerCase(), {
+                    x: xInitialPosition + textDisplacement,
+                    y: yRelativePosition - yDisplacement * index - 20,
+                    size: textFontSize,
+                    font: helveticaBold,
+                    color: () => { if(value.toString() === 'ALTA') return rgb(1,0,0)
+                    else if(value.toString() === 'MEDIA') {rgb(0.7, 0.3, 0)} else {
+                        return documentColor
+                    }}
+                })
+            }
+
+            page.drawText(value.toString(), {
                 x: xInitialPosition + textDisplacement,
                 y: yRelativePosition - yDisplacement * index - 20,
                 size: textFontSize,
@@ -73,7 +88,6 @@ async function createPdf(data) {
 
     //REPORT TITLE
     const title = (type) => {
-        console.log(logoPath)
         page.drawText('SOLICITUD DE',{
             x: xInitialPosition,
             y: yInitialPosition + 20,
@@ -116,7 +130,11 @@ async function createPdf(data) {
 
     //image
     if (data.icon){
-
+        //        page.drawImage(iconImage,{
+        //             x:xInitialPosition,
+        //             y: yInitialPosition - 260,
+        //             size: 200
+        //         })
     } else {
         page.drawSquare({
             color: documentColor,

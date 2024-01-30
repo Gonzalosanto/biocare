@@ -1,14 +1,22 @@
 const { Usuario } = require('../models/usuarios');
 const {encryptPassword, authPassword} = require("./authController");
+const {Rol} = require("../models/roles");
 
 async function getUsuarios(req, res){
-    const response = await Usuario.findAll();
-    res.send(response);
+    const response = (await Usuario.findAll());
+    const result = response.map( async (r)=> {
+        const rol = await Rol.findByPk(r.rol)
+        return {
+           ...r.dataValues, rol: rol.rol
+        }
+    })
+    res.send(await Promise.all(result));
 }
 
 async function createUsuario(req, res){
     try {
         const { correo, password , nombre, apellidoPaterno, apellidoMaterno, rol } = req.body;
+        if(await Usuario.findOne({where: {'correo': correo}})) return res.status(400).json({msg: "Usuario ya existe"})
         const newUser = {
             correo: correo,
             password: await encryptPassword(password),
@@ -19,6 +27,7 @@ async function createUsuario(req, res){
         await Usuario.create(newUser);
         res.json({message: "Usuario creado exitosamente"})
     } catch (e) {
+        console.log(e) //logger.error(e)
         res.status(500).json({error: e, message: "Datos invalidos"})
     }
 }
@@ -27,8 +36,9 @@ async function getUsuario(req, res) {
     try {
         const { id } = req.params;
         const result = await Usuario.findByPk(id);
+        const rol = await Rol.findByPk(result.dataValues.rol)
         if (result) {
-            res.send(result);
+            res.send({...result.dataValues, rol: rol.rol});
         }else {
             res.send('Usuario no encontrado');
         }
@@ -41,8 +51,9 @@ async function getUsuario(req, res) {
 async function updateUsuario(req, res) {
     try {
         const {id} = req.params;
-        const {nombre, usuario, apellido } = req.body;
-        const update = await Usuario.update({nombre: nombre, correo: usuario, apellido: apellido}, {where: {id: id}})
+        const { nombre, correo, apellido, rol } = req.body;
+        if(await Usuario.findOne({where: {'correo': correo}})) return res.json({message: "El usuario con el correo provisto ya existe!"})
+        const update = await Usuario.update({nombre: nombre, correo: correo, apellido: apellido, rol: rol}, {where: {id: id}})
         if(update[0] > 0){
             res.json({message: "Usuario actualizado"})
         } else {
@@ -51,6 +62,7 @@ async function updateUsuario(req, res) {
     }
     catch (err) {
         console.log(err);
+        res.status(500).json({error: "Hubo un error al actualizar"})
     }
 }
 

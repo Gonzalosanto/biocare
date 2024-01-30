@@ -15,7 +15,7 @@ const Usuario = databaseInstance.define("Usuarios",{
     },
     apellido: {
         type: DataTypes.STRING(255),
-    }
+    },
 },{
     timestamps: false
 })

@@ -6,6 +6,6 @@ const { reporteRoutes } = require('./reporteRoute.js')
 
 router.use('/usuarios', userRoutes); //OK
 router.use('/equipos', dispositivosRoutes); //OK
-router.use('/reportes', reporteRoutes); //TO CHECK -> endpoints
+router.use('/reportes', reporteRoutes); //OK
 
 module.exports = {router};
